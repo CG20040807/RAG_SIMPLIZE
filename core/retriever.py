@@ -1,13 +1,11 @@
-from sentence_transformers import SentenceTransformer
-from core.faiss_index import search_index
-import numpy as np
+import faiss
+import pandas as pd
+from core.embedding import encode
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+index = faiss.read_index("vectorstore/faiss.index")
+df = pd.read_pickle("vectorstore/data.pkl")
 
-def retrieve(query, k=20):
-
-    q_vec = model.encode([query], normalize_embeddings=True)
-
-    idx, scores, df = search_index(np.array(q_vec), k)
-
-    return df.iloc[idx]
+def retrieve(query, k=50):
+    q_vec = encode([query])
+    scores, idx = index.search(q_vec, k)
+    return df.iloc[idx[0]]
