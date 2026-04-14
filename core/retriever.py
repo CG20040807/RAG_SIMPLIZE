@@ -1,12 +1,18 @@
-import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from core.embedding import load_vectors
 
-vectorizer, vecs, df = load_vectors()
+df = pd.read_csv("data/products.csv")
+
+vectorizer = TfidfVectorizer()
+
+vectors = vectorizer.fit_transform(
+    df["name"] + " " + df["category"] + " " + df["description"]
+)
 
 def search(query, k=5):
-    q_vec = vectorizer.transform([query])
-    scores = cosine_similarity(q_vec, vecs).flatten()
+    q = vectorizer.transform([query])
+    scores = cosine_similarity(q, vectors).flatten()
 
-    top_k = np.argsort(scores)[-k:][::-1]
+    top_k = scores.argsort()[-k:][::-1]
     return df.iloc[top_k]
