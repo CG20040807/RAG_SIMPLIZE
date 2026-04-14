@@ -1,45 +1,46 @@
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from rank_bm25 import BM25Okapi
 
 df = pd.read_csv("data/products.csv")
 
-# ❗ 加强：n-gram + stopwords
-vectorizer = TfidfVectorizer(
-    ngram_range=(1, 2),
-    stop_words=["性价比", "推荐", "好用", "不错", "优质"]
-)
+# =========================
+# 商品“增强描述”（关键）
+# =========================
+corpus = []
+for _, row in df.iterrows():
+    text = f"""
+    {row['name']}
+    {row['category']}
+    {row['description']}
+    {row.get('scenario','')}
+    {row.get('user_type','')}
+    """
+    corpus.append(text.lower().split())
 
-doc_vectors = vectorizer.fit_transform(
-    df["name"] + " " + df["category"] + " " + df["description"]
-)
+bm25 = BM25Okapi(corpus)
 
 # =========================
-# 🔥 Query增强（关键升级）
+# Query增强（关键）
 # =========================
 def expand_query(q):
-    mapping = {
-        "耳机": "耳机 降噪 通勤 学生党 音质",
-        "跑鞋": "跑鞋 轻便 运动 缓震",
-        "键盘": "键盘 办公 舒适 打字 手感"
+    rules = {
+        "耳机": "降噪 通勤 学生党 音质",
+        "跑鞋": "缓震 轻便 运动 日常",
+        "键盘": "办公 手感 打字 舒适"
     }
 
-    for k, v in mapping.items():
+    for k, v in rules.items():
         if k in q:
-            return q + " " + v
+            q = q + " " + v
 
-    return q
+    return q.lower().split()
 
 
 def search(query, k=3):
-    query = expand_query(query)
+    tokenized_query = expand_query(query)
 
-    q_vec = vectorizer.transform([query])
-    scores = cosine_similarity(q_vec, doc_vectors).flatten()
+    scores = bm25.get_scores(tokenized_query)
 
-    # ❗关键：防止“分数太接近”
-    scores = scores + (scores - scores.mean()) * 0.1
-
-    top_k = scores.argsort()[-k:][::-1]
+    top_k = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:k]
 
     return df.iloc[top_k]
