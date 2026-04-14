@@ -1,19 +1,14 @@
-from sentence_transformers import CrossEncoder
-
-reranker = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
-
 def rerank(query, docs):
-    pairs = [
-        (query, row["name"] + " " + row["description"])
-        for _, row in docs.iterrows()
-    ]
 
-    scores = reranker.predict(pairs)
+    query_words = set(query.lower())
 
-    ranked = sorted(
-        zip(docs.index, scores),
-        key=lambda x: x[1],
-        reverse=True
-    )
+    scored = []
 
-    return [i[0] for i in ranked]
+    for i, row in docs.iterrows():
+        text = (row["name"] + row["description"]).lower()
+        score = sum([1 for w in query_words if w in text])
+        scored.append((i, score))
+
+    ranked = sorted(scored, key=lambda x: x[1], reverse=True)
+
+    return [i[0] for i in ranked if i[1] > 0]
