@@ -1,33 +1,25 @@
 from core.retriever import search
-from dataclasses import dataclass
+from core.retriever import retrieve
+from core.reranker import rerank
 
-# ======================
-# ViewModel（关键升级）
-# ======================
-@dataclass
-class ProductView:
-    name: str
-    price: int
-    category: str
-    reason: str
-
-
-# ======================
-# Controller（统一逻辑）
-# ======================
 def run(query):
-    docs = search(query)
+
+    # 1️⃣ FAISS召回
+    docs = retrieve(query, k=30)
+
+    # 2️⃣ rerank精排
+    ranked_idx = rerank(query, docs)
 
     results = []
 
-    for _, row in docs.iterrows():
-        results.append(
-            ProductView(
-                name=row["name"],
-                price=int(row["price"]),
-                category=row["category"],
-                reason=f"该商品匹配需求「{query}」，在同类商品中性价比较高"
-            )
-        )
+    for i in ranked_idx[:5]:
+        row = docs.loc[i]
 
-    return results[:3]
+        results.append({
+            "name": row["name"],
+            "price": row["price"],
+            "category": row["category"],
+            "reason": f"匹配需求：{query}"
+        })
+
+    return results
