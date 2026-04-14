@@ -1,46 +1,23 @@
 import streamlit as st
 from core.pipeline import run
 
-st.set_page_config(page_title="电商RAG系统", layout="centered")
+st.set_page_config(page_title="工业级RAG电商系统")
 
-st.title("🛒 AI电商推荐系统")
+st.title("🛒 FAISS + Rerank 电商推荐系统")
 
-# ======================
-# 输入引导（关键）
-# ======================
-st.markdown("### 💡 你可以这样问我")
-
-st.info("""
-- 200元以内跑鞋推荐  
-- 送女生生日礼物  
-- 性价比耳机推荐  
-- 办公键盘推荐  
-""")
-
-query = st.text_input(
-    "请输入你的需求",
-    placeholder="例如：200元跑鞋 / 送女生礼物 / 降噪耳机"
-)
-
-# ======================
-# UI渲染（绝不再写json）
-# ======================
-def render(item):
-    st.markdown(f"""
-### 🛍️ {item.name}
-
-💰 价格：{item.price} 元  
-🏷️ 类别：{item.category}  
-
-📌 推荐理由：{item.reason}
-
----
-""")
+query = st.text_input("请输入你的需求（如：200元跑鞋 / 降噪耳机）")
 
 if query:
     results = run(query)
 
-    st.markdown("## 🧠 推荐结果")
+    st.subheader("推荐结果")
 
     for r in results:
-        render(r)
+        st.markdown(f"""
+### 🛍 {r['name']}
+💰 价格：{r['price']}
+🏷 类别：{r['category']}
+
+📌 推荐理由：{r['reason']}
+---
+""")
