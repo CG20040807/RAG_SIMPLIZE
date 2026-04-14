@@ -1,6 +1,6 @@
 streamlit
-sentence-transformers
-faiss-cpu
+sentence-transformers==2.2.2
+faiss-cpu==1.7.4
 pandas
 numpy
 requests
