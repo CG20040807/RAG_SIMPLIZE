@@ -1,14 +1,46 @@
 import streamlit as st
-from core.rag import answer
-from core.retriever import build_if_not_exists
+from core.pipeline import run
 
-st.title("🛒 电商RAG系统")
+st.set_page_config(page_title="电商RAG系统", layout="centered")
 
-# 🔥 关键：启动时保证index存在
-build_if_not_exists()
+st.title("🛒 AI电商推荐系统")
 
-query = st.text_input("输入你的需求")
+# ======================
+# 输入引导（关键）
+# ======================
+st.markdown("### 💡 你可以这样问我")
+
+st.info("""
+- 200元以内跑鞋推荐  
+- 送女生生日礼物  
+- 性价比耳机推荐  
+- 办公键盘推荐  
+""")
+
+query = st.text_input(
+    "请输入你的需求",
+    placeholder="例如：200元跑鞋 / 送女生礼物 / 降噪耳机"
+)
+
+# ======================
+# UI渲染（绝不再写json）
+# ======================
+def render(item):
+    st.markdown(f"""
+### 🛍️ {item.name}
+
+💰 价格：{item.price} 元  
+🏷️ 类别：{item.category}  
+
+📌 推荐理由：{item.reason}
+
+---
+""")
 
 if query:
-    result = answer(query)
-    st.write(result)
+    results = run(query)
+
+    st.markdown("## 🧠 推荐结果")
+
+    for r in results:
+        render(r)
